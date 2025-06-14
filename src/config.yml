@@ -1,0 +1,124 @@
+#OneBlock Plugin Configuration file
+#by MrMarL & Adarsh A
+
+#Specify the World Name.
+world: world
+#The Cordinates where the postion of your First OneBlock is set.
+x: 0.0
+y: 0.0
+z: 0.0
+#This is the place where a player gets tp-ed when they execute /ob leave
+leaveworld: world
+#Specify the Lobby World
+xleave: 0.0
+yleave: 0.0
+zleave: 0.0
+yawleave: 0.0
+#Should we enable the Progress Bar?
+progress_bar:
+  enabled: true
+  color: GREEN
+  text: "&aOneBlock Progress: &e%level% &7(&e%blocks%&7/&e%need%&7)"
+  auto_hide: true
+  hide_delay: 5
+#What shoud progress bar show?
+progress_bar_text: level
+#Shoud we enable chat alert for Levels
+chat_alert: true
+#ProgressBar Color
+progress_bar_color: GREEN
+#Shoud we Create New Islands for New Players?
+island_for_new_players: true
+#Should the player get tp-ed to the island again after the death in game?
+rebirth_on_the_island: true
+#Level Multiplier 
+#Default value: 5
+level_multiplier: 5
+#Should we Prevent other players going from their island to others islands?
+protection:
+  enabled: true
+  prevent_explosions: true
+  prevent_pistons: true
+  prevent_liquids: true
+  prevent_creative: true
+#Create a WorldGuard region for each island? (only premium)
+worldGuard: true
+#This is the block-distance between one Island to other.
+#Default value 100. If you increase this then More chunks will be generated.
+#Which causes more storage to be occupied
+set: 100
+#Use the island creation mode in a circle?
+circleMode: true
+#Toss drop(item) up above the block?
+droptossup: true
+#Apply physics to blocks? //for example: falling gravel
+physics: false
+#Limits the number of people on the island. (0 - unlimited)
+max_players_team: 0
+#Keep player inventory after id reset?
+saveplayerinventory: false
+
+# General Settings
+radius: 10
+mode: scenario
+
+# Block Generation Settings
+generation:
+  scenario:
+    enabled: true
+    blocks_per_level: 100
+    levels:
+      1:
+        name: "Grass"
+        blocks:
+          - GRASS_BLOCK
+          - DIRT
+          - STONE
+      2:
+        name: "Wood"
+        blocks:
+          - OAK_LOG
+          - BIRCH_LOG
+          - SPRUCE_LOG
+      3:
+        name: "Ores"
+        blocks:
+          - COAL_ORE
+          - IRON_ORE
+          - GOLD_ORE
+  random:
+    enabled: false
+    blocks:
+      - GRASS_BLOCK
+      - DIRT
+      - STONE
+      - OAK_LOG
+      - BIRCH_LOG
+      - SPRUCE_LOG
+      - COAL_ORE
+      - IRON_ORE
+      - GOLD_ORE
+    mobs:
+      - ZOMBIE
+      - SKELETON
+      - SPIDER
+    flowers:
+      - DANDELION
+      - POPPY
+      - BLUE_ORCHID
+
+# Messages
+messages:
+  level_up: "&aYou have reached level %level%!"
+  block_break: "&eYou broke a block! Progress: %blocks%/%need%"
+  no_permission: "&cYou don't have permission to do that!"
+  block_protected: "&cThis block is protected!"
+  invalid_location: "&cInvalid location for OneBlock!"
+
+# Integration Settings
+integrations:
+  placeholderapi: true
+  worldguard: true
+  coreprotect: true
+  itemsadder: true
+  oraxen: true

@@ -1,0 +1,8 @@
+/.settings
+.classpath
+.gitattributes
+.project
+/bin
+/target
+/lib
+/resources

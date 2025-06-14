@@ -1,0 +1,27 @@
+name:  OneblockRemake
+main:  Oneblock.Oneblock
+version:  1.3.3
+api-version: 1.13
+author:  MrMarL, forword__
+softdepend: [Multiverse-Core , PlaceholderAPI , WorldGuard , ItemsAdder , Oraxen , Nexo]
+commands:
+  oneblock:
+    description: Oneblock main command.
+    aliases: ob
+    usage: /ob join
+  ob j:
+  ob ver:
+    description: Version.
+permissions:
+    Oneblock.set:
+        description: For admin
+        default: op
+    Oneblock.join:
+        description: For all
+        default: true
+    Oneblock.invite:
+        default: true
+    Oneblock.visit:
+        default: false
+    Oneblock.ignoreBarrier:
+        default: op
