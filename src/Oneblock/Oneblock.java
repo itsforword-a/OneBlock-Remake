@@ -590,7 +590,7 @@ public class Oneblock extends JavaPlugin {
     private Block generateBlock(Object blockData, Location location) {
         if (blockData instanceof XMaterial) {
             XMaterial material = (XMaterial) blockData;
-            material.setBlock(location.getBlock(), physics);
+            material.setBlock(location.getBlock());
             return location.getBlock();
         } else if (blockData instanceof EntityType) {
             EntityType entityType = (EntityType) blockData;
@@ -1239,6 +1239,7 @@ public class Oneblock extends JavaPlugin {
 	private void Blockfile() {
     	blocks.clear();
     	mobs.clear();
+    	flowers.clear();
     	Level.levels.clear();
         File block = new File(getDataFolder(), "blocks.yml");
         if (!block.exists())
@@ -1370,8 +1371,8 @@ public class Oneblock extends JavaPlugin {
 		bossBar.setProgress(progress);
 		
 		// Remove old boss bar if exists
-		if (player.getActiveBossBars().size() > 0) {
-			player.getActiveBossBars().forEach(BossBar::removeAll);
+		if (player.getBossBars().size() > 0) {
+			player.getBossBars().forEach(BossBar::removeAll);
 		}
 		
 		bossBar.addPlayer(player);

@@ -66,7 +66,7 @@ public class PlayerInfo {
 	}
 	
 	public int getNeed() {
-        return Level.get(lvl).length;
+        return Level.get(lvl).need;
     }
 	
 	public double getPercent() {
