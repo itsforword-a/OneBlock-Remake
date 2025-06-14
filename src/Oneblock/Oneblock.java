@@ -65,6 +65,7 @@ import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.EventPriority;
 
 public class Oneblock extends JavaPlugin {
     public static Oneblock plugin;
@@ -558,17 +559,17 @@ public class Oneblock extends JavaPlugin {
             }
         } else {
             // Scenario mode - sequential generation
-            int blockIndex = info.blocks % level.blocks.size();
+            int blockIndex = info.breaks % level.blocks.size();
             Object selected = level.blocks.get(blockIndex);
             nextBlock = generateBlock(selected, block.getLocation());
         }
         
         if (nextBlock != null) {
             // Update player progress
-            info.blocks++;
-            if (info.blocks >= level.need) {
+            info.breaks++;
+            if (info.breaks >= level.need) {
                 info.lvl++;
-                info.blocks = 0;
+                info.breaks = 0;
                 
                 // Notify player of level up
                 String levelUpMsg = ChatColor.translateAlternateColorCodes('&', 
@@ -582,12 +583,14 @@ public class Oneblock extends JavaPlugin {
             }
             
             // Update boss bar
-            updateBossBar(ponl, info.lvl, info.blocks, level.need);
+            updateBossBar(ponl, info.lvl, info.breaks, level.need);
         }
     }
     
     private Block generateBlock(Object blockData, Location location) {
         if (blockData instanceof XMaterial) {
+            XMaterial material = (XMaterial) blockData;
+            material.setBlock(location.getBlock(), physics);
             return location.getBlock();
         } else if (blockData instanceof EntityType) {
             EntityType entityType = (EntityType) blockData;
@@ -1367,8 +1370,8 @@ public class Oneblock extends JavaPlugin {
 		bossBar.setProgress(progress);
 		
 		// Remove old boss bar if exists
-		if (player.getBossBars().size() > 0) {
-			player.getBossBars().forEach(BossBar::removeAll);
+		if (player.getActiveBossBars().size() > 0) {
+			player.getActiveBossBars().forEach(BossBar::removeAll);
 		}
 		
 		bossBar.addPlayer(player);

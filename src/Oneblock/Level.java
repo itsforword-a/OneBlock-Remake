@@ -20,13 +20,18 @@ public class Level {
 	}
 	
 	public String name;
-	public int blocks = 0;
-	public int mobs = 0;
+	public ArrayList<Object> blocks = new ArrayList<>();
+	public int need = 100;
 	public BarColor color;
-	public int length = 100;
 	
 	public Level(String name) {
         this.name = name;
+        this.color = BarColor.GREEN;
+    }
+	
+	public Level(String name, BarColor color) {
+        this.name = name;
+        this.color = color;
     }
 	
 	public int getId() {
@@ -37,4 +42,16 @@ public class Level {
 		}
 		return 1;
 	}
+	
+	public void addBlock(Object block) {
+        blocks.add(block);
+    }
+	
+	public void setNeed(int need) {
+        this.need = need;
+    }
+	
+	public void setColor(BarColor color) {
+        this.color = color;
+    }
 }
