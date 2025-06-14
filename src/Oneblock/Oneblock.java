@@ -66,6 +66,7 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.EventPriority;
+import org.bukkit.inventory.ItemStack;
 
 public class Oneblock extends JavaPlugin {
     public static Oneblock plugin;
@@ -590,7 +591,7 @@ public class Oneblock extends JavaPlugin {
     private Block generateBlock(Object blockData, Location location) {
         if (blockData instanceof XMaterial) {
             XMaterial material = (XMaterial) blockData;
-            material.setBlock(location.getBlock());
+            location.getBlock().setType(material.parseMaterial());
             return location.getBlock();
         } else if (blockData instanceof EntityType) {
             EntityType entityType = (EntityType) blockData;
@@ -605,7 +606,12 @@ public class Oneblock extends JavaPlugin {
                     return location.getBlock();
                 }
             } else if (placetype == Place.Type.Oraxen) {
-                OraxenItems.getBlock((String) blockData).place(location);
+                if (OraxenItems.exists((String) blockData)) {
+                    ItemStack item = OraxenItems.getItemById((String) blockData).build();
+                    if (item != null) {
+                        location.getBlock().setType(item.getType());
+                    }
+                }
                 return location.getBlock();
             }
         }
@@ -613,8 +619,11 @@ public class Oneblock extends JavaPlugin {
     }
     
     public void spawnRandomMob(int pos_x, int pos_z, Level level) {
-        if (level.mobs == 0) return;
-        wor.spawnEntity(new Location(wor, pos_x + .5, y + 1, pos_z + .5), mobs.get(rnd.nextInt(level.mobs)));
+        if (level == null || level.mobs.isEmpty()) return;
+        EntityType mobType = level.mobs.get(rnd.nextInt(level.mobs.size()));
+        if (mobType != null) {
+            wor.spawnEntity(new Location(wor, pos_x + .5, y + 1, pos_z + .5), mobType);
+        }
     }
     
     public String getBarTitle(Player p, int lvl) {
@@ -1349,55 +1358,14 @@ public class Oneblock extends JavaPlugin {
 	
 	public void updateBossBar(Player player, int level, int blocks, int need) {
 		if (!Progress_bar) return;
+		PlayerInfo info = PlayerInfo.get(player.getUniqueId());
+		if (info == null || info.bar == null) return;
 		
-		String title = TextP
-			.replace("%level%", String.valueOf(level))
-			.replace("%blocks%", String.valueOf(blocks))
-			.replace("%need%", String.valueOf(need));
-		
-		if (PAPI) {
-			title = PlaceholderAPI.setPlaceholders(player, title);
-		}
-		
-		title = ChatColor.translateAlternateColorCodes('&', title);
-		
-		BossBar bossBar = Bukkit.createBossBar(
-			title,
-			Progress_color,
-			BarStyle.SOLID
-		);
-		
-		double progress = Math.min(1.0, (double) blocks / need);
-		bossBar.setProgress(progress);
-		
-		// Remove old boss bar if exists
-		if (player.getBossBars().size() > 0) {
-			player.getBossBars().forEach(BossBar::removeAll);
-		}
-		
-		bossBar.addPlayer(player);
-		
-		// Auto-remove boss bar after 5 seconds if player is not in range
-		Bukkit.getScheduler().runTaskLater(this, () -> {
-			if (bossBar.getPlayers().contains(player)) {
-				Location playerLoc = player.getLocation();
-				boolean inRange = false;
-				
-				for (int plID = 0; plID < PlayerInfo.size(); plID++) {
-					int[] coords = getFullCoord(plID);
-					Location blockLoc = new Location(wor, coords[0], y, coords[1]);
-					
-					if (playerLoc.distance(blockLoc) <= config.getInt("radius", 10)) {
-						inRange = true;
-						break;
-					}
-				}
-    
-				if (!inRange) {
-					bossBar.removePlayer(player);
-				}
-			}
-		}, 100L);
+		String title = getBarTitle(player, level);
+		double progress = (double) blocks / need;
+		info.bar.setTitle(title);
+		info.bar.setProgress(Math.min(1.0, Math.max(0.0, progress)));
+		info.bar.setColor(Progress_color);
 	}
 	
     private void Messagefile() {
@@ -1564,7 +1532,10 @@ public class Oneblock extends JavaPlugin {
     	return inf.getNeed() - inf.breaks;
     }
     public static int getlenght(UUID pl_uuid) {
-    	return PlayerInfo.get(pl_uuid).getNeed();
+        PlayerInfo info = PlayerInfo.get(pl_uuid);
+        if (info == null) return 0;
+        Level level = Level.get(info.level);
+        return level != null ? level.need : 0;
     }
     public static PlayerInfo gettop(int i) {
     	if (PlayerInfo.size() <= i) return new PlayerInfo(null);
