@@ -1,8 +1,8 @@
 package Oneblock;
 
 import java.util.ArrayList;
+
 import org.bukkit.boss.BarColor;
-import org.bukkit.entity.EntityType;
 
 public class Level {
 	public static Level max = new Level("Level: MAX");
@@ -20,19 +20,13 @@ public class Level {
 	}
 	
 	public String name;
-	public ArrayList<Object> blocks = new ArrayList<>();
-	public ArrayList<EntityType> mobs = new ArrayList<>();
-	public int need = 100;
+	public int blocks = 0;
+	public int mobs = 0;
 	public BarColor color;
+	public int length = 100;
 	
 	public Level(String name) {
         this.name = name;
-        this.color = BarColor.GREEN;
-    }
-	
-	public Level(String name, BarColor color) {
-        this.name = name;
-        this.color = color;
     }
 	
 	public int getId() {
@@ -43,20 +37,4 @@ public class Level {
 		}
 		return 1;
 	}
-	
-	public void addBlock(Object block) {
-        blocks.add(block);
-    }
-	
-	public void addMob(EntityType mob) {
-        mobs.add(mob);
-    }
-	
-	public void setNeed(int need) {
-        this.need = need;
-    }
-	
-	public void setColor(BarColor color) {
-        this.color = color;
-    }
 }

@@ -36,13 +36,10 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.block.Block;
 import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -59,14 +56,6 @@ import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.generator.ChunkGenerator;
-import org.bukkit.GameMode;
-import org.bukkit.block.BlockFace;
-import org.bukkit.event.block.BlockExplodeEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.block.BlockPistonExtendEvent;
-import org.bukkit.event.block.BlockPistonRetractEvent;
-import org.bukkit.event.EventPriority;
-import org.bukkit.inventory.ItemStack;
 
 public class Oneblock extends JavaPlugin {
     public static Oneblock plugin;
@@ -105,6 +94,15 @@ public class Oneblock extends JavaPlugin {
     public World getWorld() { return plugin.wor; }
     public boolean isPAPIEnabled() { return PAPI; }
     public boolean isProgressBarEnabled() { return Progress_bar; }
+    
+	public int[] getFullCoord(final int id) { return IslandCoordinateCalculator.getById(id, x, z, sto, CircleMode); }
+    
+	public String getBarTitle(Player p, int lvl) {
+		if (lvl_bar_mode) return Level.get(lvl).name;
+		if (PAPI) return PlaceholderAPI.setPlaceholders(p, TextP);
+        
+		return TextP;
+	}
     
 	@Override
 	public ChunkGenerator getDefaultWorldGenerator(String worldName, String id) {return GenVoid;}
@@ -181,6 +179,13 @@ public class Oneblock extends JavaPlugin {
         metrics.addCustomChart(new SimplePie("place_type", () -> String.valueOf(placetype)));
     }
     
+    public class ItemsAdderEvent implements Listener {
+    	@EventHandler
+        public void ItemsAdderLoad(ItemsAdderLoadDataEvent event) {
+    		Blockfile();
+        }
+    }
+    
     public class RespawnJoinEvent implements Listener {
         @EventHandler
         public void Respawn(final PlayerRespawnEvent e) {
@@ -217,20 +222,6 @@ public class Oneblock extends JavaPlugin {
 				}
 			}
 		}
-    }
-    
-    public int findNeastRegionId(Location loc) {
-    	int id_ = 0, neast = Integer.MAX_VALUE;
-    	
-    	for (int i = 0; i < PlayerInfo.size() ;i++) {
-    		int coord[] = getFullCoord(i);
-            int distance = (int)Math.sqrt(Math.pow(coord[0] - loc.getBlockX(), 2) + Math.pow(coord[1] - loc.getBlockZ(), 2));
-            if (distance > neast) continue;
-            
-            neast = distance;
-            id_ = i;
-    	}
-    	return id_;
     }
     
     public class TeleportEvent implements Listener {
@@ -275,23 +266,6 @@ public class Oneblock extends JavaPlugin {
         }
     }
     
-    public void UpdateBorderLocation(Player pl, Location loc) {
-    	int plID = findNeastRegionId(loc);
-		int result[] = getFullCoord(plID);
-        int X_pl = result[0], Z_pl = result[1];
-		
-		WorldBorder br = Bukkit.createWorldBorder();
-    	br.setCenter(X_pl+.5, Z_pl+.5);
-    	br.setSize(sto);
-    	pl.setWorldBorder(br);
-    }
-    
-    public void UpdateBorder(final Player pl) {
-    	WorldBorder border = pl.getWorldBorder();
-    	Bukkit.getScheduler().runTaskLaterAsynchronously(this, 
-    		() -> { pl.setWorldBorder(border); }, 10L);
-    }
-    
     public class ChangedWorld implements Listener {
     	@EventHandler
         public void PlayerChangedWorldEvent(PlayerChangedWorldEvent e) {
@@ -301,79 +275,39 @@ public class Oneblock extends JavaPlugin {
         }
     }
     
-    public class ItemsAdderEvent implements Listener {
-    	@EventHandler
-        public void ItemsAdderLoad(ItemsAdderLoadDataEvent event) {
-    		Blockfile();
-        }
-    }
-    
     public class BlockEvent implements Listener {
     	@EventHandler(ignoreCancelled = true)
-        public void BlockBreak(final BlockBreakEvent e) {
-            Block block = e.getBlock();
-            if (!block.getWorld().equals(wor)) return;
-            
-            // Enhanced block protection check
-            if (!CheckPosition(block.getLocation(), block.getX(), block.getZ())) return;
-            
-            // Handle non-standard block destruction
-            if (e.getPlayer().getGameMode() == GameMode.CREATIVE) {
-                e.setCancelled(true);
-                return;
-            }
-            
-            // Handle explosion protection
-            if (e.getPlayer().getGameMode() != GameMode.CREATIVE && protection) {
-                e.setCancelled(true);
-                return;
-            }
-            
-            // Handle liquid protection
-            if (block.getType() == Material.WATER || block.getType() == Material.LAVA) {
-                e.setCancelled(true);
-                return;
-            }
-            
-            // Handle piston protection
-            if (block.getRelative(BlockFace.UP).getType() == Material.PISTON_HEAD || 
-                block.getRelative(BlockFace.DOWN).getType() == Material.PISTON_HEAD) {
-                e.setCancelled(true);
-                return;
-            }
-            
-            // Continue with normal block break logic
-            int plID = PlayerInfo.GetId(e.getPlayer().getUniqueId());
-            if (plID == -1) return;
-            
-            BlockGen(block.getX(), block.getZ(), plID, e.getPlayer(), block);
+        public void ItemStackSpawn(final EntitySpawnEvent e) {
+    		if (!droptossup) return;
+    		if (wor == null) return;
+            if (!EntityType.DROPPED_ITEM.equals(e.getEntityType())) return;
+                
+            Location loc = e.getLocation();
+            if (!wor.equals(loc.getWorld())) return;
+            if (loc.getBlockY() != y) return;
+            if ((x - loc.getBlockX()) % sto != 0) return;
+            if ((z - loc.getBlockZ()) % sto != 0) return;
+
+            Entity drop = e.getEntity();
+            drop.teleport(loc.add(0, .8, 0));
+            drop.setVelocity(new Vector(0, .1, 0));
         }
-        
-        @EventHandler(priority = EventPriority.HIGH)
-        public void onBlockExplode(BlockExplodeEvent e) {
-            if (!e.getBlock().getWorld().equals(wor)) return;
-            e.blockList().removeIf(block -> CheckPosition(block.getLocation(), block.getX(), block.getZ()));
-        }
-        
-        @EventHandler(priority = EventPriority.HIGH)
-        public void onEntityExplode(EntityExplodeEvent e) {
-            if (!e.getLocation().getWorld().equals(wor)) return;
-            e.blockList().removeIf(block -> CheckPosition(block.getLocation(), block.getX(), block.getZ()));
-        }
-        
-        @EventHandler(priority = EventPriority.HIGH)
-        public void onPistonExtend(BlockPistonExtendEvent e) {
-            if (!e.getBlock().getWorld().equals(wor)) return;
-            e.setCancelled(e.getBlocks().stream().anyMatch(block -> 
-                CheckPosition(block.getLocation(), block.getX(), block.getZ())));
-        }
-        
-        @EventHandler(priority = EventPriority.HIGH)
-        public void onPistonRetract(BlockPistonRetractEvent e) {
-            if (!e.getBlock().getWorld().equals(wor)) return;
-            e.setCancelled(e.getBlocks().stream().anyMatch(block -> 
-                CheckPosition(block.getLocation(), block.getX(), block.getZ())));
-        }
+    	@EventHandler
+    	public void BlockBreak(final BlockBreakEvent e) {
+    		if (wor == null) return;
+    		final Block block = e.getBlock();
+    		if (block.getWorld() != wor) return;
+    		if (block.getY() != y) return;
+    		final Player ponl = e.getPlayer();
+    		final UUID uuid = ponl.getUniqueId();
+        	final int plID = PlayerInfo.GetId(uuid);
+        	if (plID == -1) return;
+        	final int result[] = getFullCoord(plID);
+        	if (block.getX() != result[0]) return;
+        	if (block.getZ() != result[1]) return;
+
+            Bukkit.getScheduler().runTaskLater(Oneblock.this, () -> { BlockGen(result[0], result[1], plID, ponl, block); }, 1L);
+    	}
     }
     
     public class Initialization implements Runnable {
@@ -408,66 +342,7 @@ public class Oneblock extends JavaPlugin {
         }
         else WorldGuard = false;
     }
-    
-    public int[] getFullCoord(final int id) {
-		if (!CircleMode) return new int[] {id * sto + x, z, id};
-		
-		return getFullCoordGibrid(id);
-	}
 
-	public int[] getFullCoordIter(final int id) {
-		int X = 0, Z = 0;
-		for (int i = 0; i < id; i++) {
-			if (X > Z)
-			    if (X > -Z)
-				    Z--;
-				else
-				    X--;
-			else if (-X > Z || X == Z && Z < 0)
-				Z++;
-			else
-				X++;
-		}
-		X = X * sto + x;
-		Z = Z * sto + z;
-		return new int[] {X, Z, id};
-	}
-	
-	public int[] getFullCoordGibrid(final int id) {
-	    if (id <= 30) return getFullCoordIter(id);
-
-	    int ring = (int) Math.floor((Math.sqrt(id) + 1) / 2);
-	    int firstInRing = (2 * ring - 1) * (2 * ring - 1) + 1;
-	    int posInRing = id + 1 - firstInRing;
-	    int sideLength = 2 * ring;
-	    int side = posInRing / sideLength;
-	    int offset = posInRing % sideLength;
-
-	    int X, Z;
-
-	    switch (side) {
-	        case 0:
-	            X = ring;
-	            Z = ring - 1 - offset;
-	            break;
-	        case 1:
-	            X = ring - 1 - offset;
-	            Z = -ring;
-	            break;
-	        case 2:
-	            X = -ring;
-	            Z = -ring + 1 + offset;
-	            break;
-	        default:
-	        	X = -ring + 1 + offset;
-	            Z = ring;
-	    }
-
-	    X = X * sto + x;
-	    Z = Z * sto + z;
-	    return new int[] {X, Z, id};
-	}
-	
 	public class TaskUpdatePlayers implements Runnable {
 		public void run() { cache.updateCache(wor.getPlayers()); }
 	}
@@ -528,112 +403,108 @@ public class Oneblock extends JavaPlugin {
         }
     }
     
+    public void BlockGen(final int X_pl, final int Z_pl, final int plID, final Player ponl, final Block block) {
+    	final PlayerInfo inf = PlayerInfo.get(plID);
+    	Level lvl_inf = Level.get(inf.lvl); 
+        if (++inf.breaks >= inf.getNeed()) {
+        	lvl_inf = inf.lvlup();
+        	if (Progress_bar) inf.bar.setColor(lvl_inf.color);
+        	if (chat_alert) ponl.sendMessage(ChatColor.GREEN + lvl_inf.name);
+        }
+        if (Progress_bar) {
+            inf.bar.setTitle(getBarTitle(ponl, inf.lvl));
+            inf.bar.setProgress(inf.getPercent());
+            inf.bar.addPlayer(ponl);
+        }
+        
+        Object newblocktype = blocks.get(lvl_inf.blocks == 0 ? 0 : rnd.nextInt(lvl_inf.blocks));
+        if (newblocktype == null) {
+            XBlock.setType(block, GRASS_BLOCK);
+            if (rnd.nextInt(3) == 1) XBlock.setType(wor.getBlockAt(X_pl, y + 1, Z_pl), flowers.get(rnd.nextInt(flowers.size())));
+        }
+        else placer.setType(block, newblocktype, physics);
+
+        if (rnd.nextInt(9) == 0) spawnRandomMob(X_pl, Z_pl, lvl_inf);
+	}
+    
+	public void spawnRandomMob(int pos_x, int pos_z, Level level) {
+		if (level.mobs == 0) return;
+		wor.spawnEntity(new Location(wor, pos_x + .5, y + 1, pos_z + .5), mobs.get(rnd.nextInt(level.mobs)));
+	}
+    
+    public int findNeastRegionId(Location loc) {
+    	int id_ = 0, neast = Integer.MAX_VALUE;
+    	
+    	for (int i = 0; i < PlayerInfo.size() ;i++) {
+    		int coord[] = getFullCoord(i);
+            int distance = (int)Math.sqrt(Math.pow(coord[0] - loc.getBlockX(), 2) + Math.pow(coord[1] - loc.getBlockZ(), 2));
+            if (distance > neast) continue;
+            
+            neast = distance;
+            id_ = i;
+    	}
+    	return id_;
+	}
+    
+	private void ReCreateRegions() {
+		if (!WorldGuard || !OBWorldGuard.canUse || OBWG == null) return;
+		
+		int id = PlayerInfo.size();
+		OBWG.RemoveRegions(id);
+    	
+		for (int i = 0; i < id; i++) {
+			PlayerInfo owner = PlayerInfo.get(i);
+			if (owner.uuid == null) continue;
+			
+			int pos[] = getFullCoord(i);
+			OBWG.CreateRegion(owner.uuid, pos[0], pos[1], sto, i);
+			for (UUID member: owner.uuids) 
+				OBWG.addMember(member, i);
+		}
+	}
+    
+    private void SetupProgressBar() {
+		if (superlegacy) return;
+		if (PlayerInfo.size() == 0) return;
+		
+		if (Progress_color == null)
+			Progress_color = BarColor.GREEN;
+		
+		Level.max.color = Progress_color;
+		PlayerInfo.list.forEach(inf -> {if (inf.uuid != null){
+			Player p = Bukkit.getPlayer(inf.uuid);
+			if (p == null)
+				inf.createBar();
+			else
+				inf.createBar(getBarTitle(p, inf.lvl));
+        	        	
+			inf.bar.setVisible(Progress_bar);
+        }});
+	}
+    
+    public void UpdateBorderLocation(Player pl, Location loc) {
+    	int plID = findNeastRegionId(loc);
+		int result[] = getFullCoord(plID);
+        int X_pl = result[0], Z_pl = result[1];
+		
+		WorldBorder br = Bukkit.createWorldBorder();
+    	br.setCenter(X_pl+.5, Z_pl+.5);
+    	br.setSize(sto);
+    	pl.setWorldBorder(br);
+    }
+    
+    public void UpdateBorder(final Player pl) {
+    	WorldBorder border = pl.getWorldBorder();
+    	Bukkit.getScheduler().runTaskLaterAsynchronously(this, 
+    		() -> { pl.setWorldBorder(border); }, 10L);
+    }
+    
     public boolean CheckPosition(Location loc, int X_pl, int Z_pl) {
     	X_pl = loc.getBlockX()-X_pl;
     	Z_pl = CircleMode ? loc.getBlockZ()-Z_pl : 0;
     	int val = Math.abs(sto/2) + 1;
     	return (Math.abs(X_pl) <= val && Math.abs(Z_pl) <= val);
     }
-    
-    public void BlockGen(final int X_pl, final int Z_pl, final int plID, final Player ponl, final Block block) {
-        if (block.getY() != y) return;
-        
-        PlayerInfo info = PlayerInfo.get(plID);
-        if (info == null) return;
-        
-        Level level = Level.get(info.lvl);
-        if (level == null) return;
-        
-        String mode = config.getString("mode", "scenario");
-        Block nextBlock = null;
-        
-        if ("random".equalsIgnoreCase(mode)) {
-            // Random mode - select from all possible blocks
-            List<Object> allBlocks = new ArrayList<>();
-            allBlocks.addAll(blocks);
-            allBlocks.addAll(mobs);
-            allBlocks.addAll(flowers);
-            
-            if (!allBlocks.isEmpty()) {
-                Object selected = allBlocks.get(rnd.nextInt(allBlocks.size()));
-                nextBlock = generateBlock(selected, block.getLocation());
-            }
-        } else {
-            // Scenario mode - sequential generation
-            int blockIndex = info.breaks % level.blocks.size();
-            Object selected = level.blocks.get(blockIndex);
-            nextBlock = generateBlock(selected, block.getLocation());
-        }
-        
-        if (nextBlock != null) {
-            // Update player progress
-            info.breaks++;
-            if (info.breaks >= level.need) {
-                info.lvl++;
-                info.breaks = 0;
-                
-                // Notify player of level up
-                String levelUpMsg = ChatColor.translateAlternateColorCodes('&', 
-                    config.getString("messages.level_up", "&aYou have reached level %level%!")
-                        .replace("%level%", String.valueOf(info.lvl)));
-                ponl.sendMessage(levelUpMsg);
-                
-                // Play level up effects
-                ponl.playSound(ponl.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-                ponl.spawnParticle(Particle.TOTEM, block.getLocation().add(0.5, 0.5, 0.5), 50, 0.5, 0.5, 0.5, 0.1);
-            }
-            
-            // Update boss bar
-            updateBossBar(ponl, info.lvl, info.breaks, level.need);
-        }
-    }
-    
-    private Block generateBlock(Object blockData, Location location) {
-        if (blockData instanceof XMaterial) {
-            XMaterial material = (XMaterial) blockData;
-            location.getBlock().setType(material.parseMaterial());
-            return location.getBlock();
-        } else if (blockData instanceof EntityType) {
-            EntityType entityType = (EntityType) blockData;
-            location.getWorld().spawnEntity(location.add(0.5, 1, 0.5), entityType);
-            return location.getBlock();
-        } else if (blockData instanceof String) {
-            // Handle custom blocks from ItemsAdder, Oraxen, etc.
-            if (placetype == Place.Type.ItemsAdder) {
-                CustomBlock customBlock = CustomBlock.getInstance((String) blockData);
-                if (customBlock != null) {
-                    customBlock.place(location);
-                    return location.getBlock();
-                }
-            } else if (placetype == Place.Type.Oraxen) {
-                if (OraxenItems.exists((String) blockData)) {
-                    ItemStack item = OraxenItems.getItemById((String) blockData).build();
-                    if (item != null) {
-                        location.getBlock().setType(item.getType());
-                    }
-                }
-                return location.getBlock();
-            }
-        }
-        return null;
-    }
-    
-    public void spawnRandomMob(int pos_x, int pos_z, Level level) {
-        if (level == null || level.mobs.isEmpty()) return;
-        EntityType mobType = level.mobs.get(rnd.nextInt(level.mobs.size()));
-        if (mobType != null) {
-            wor.spawnEntity(new Location(wor, pos_x + .5, y + 1, pos_z + .5), mobType);
-        }
-    }
-    
-    public String getBarTitle(Player p, int lvl) {
-        if (lvl_bar_mode) return Level.get(lvl).name;
-        if (PAPI) return PlaceholderAPI.setPlaceholders(p, TextP);
-        
-        return TextP;
-    }
-
-    public void onDisable() { SaveData(); }
     
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
     	if (!cmd.getName().equalsIgnoreCase("oneblock")) return false;
@@ -1214,6 +1085,13 @@ public class Oneblock extends JavaPlugin {
 		    }
 	    }
     }
+    
+    public void onDisable() { SaveData(); }
+    
+    public void SaveData() {
+    	File PlData = new File(getDataFolder(), "PlData.json");
+    	JsonSimple.Write(PlayerInfo.list, PlData);
+    }
 
     private void Datafile() {
     	File PlData = new File(getDataFolder(), "PlData.json");
@@ -1222,33 +1100,10 @@ public class Oneblock extends JavaPlugin {
 		else
 			PlayerInfo.list = ReadOldData.Read(new File(getDataFolder(), "PlData.yml"));
     }
-    
-    private void ReCreateRegions() {
-    	if (!WorldGuard || !OBWorldGuard.canUse || OBWG == null) return;
-    	
-    	int id = PlayerInfo.size();
-    	OBWG.RemoveRegions(id);
-    	
-    	for (int i = 0; i < id; i++) {
-    		PlayerInfo owner = PlayerInfo.get(i);
-    		if (owner.uuid == null) continue;
-			
-    		int pos[] = getFullCoord(i);
-    		OBWG.CreateRegion(owner.uuid, pos[0], pos[1], sto, i);
-    		for (UUID member: owner.uuids) 
-    			OBWG.addMember(member, i);
-        }
-    }
-
-    public void SaveData() {
-    	File PlData = new File(getDataFolder(), "PlData.json");
-    	JsonSimple.Write(PlayerInfo.list, PlData);
-    }
 
 	private void Blockfile() {
     	blocks.clear();
     	mobs.clear();
-    	flowers.clear();
     	Level.levels.clear();
         File block = new File(getDataFolder(), "blocks.yml");
         if (!block.exists())
@@ -1337,36 +1192,6 @@ public class Oneblock extends JavaPlugin {
         
         SetupProgressBar();
     }
-	
-	private void SetupProgressBar() {
-		Progress_bar = config.getBoolean("progress_bar.enabled", true);
-		if (!Progress_bar) return;
-		
-		String color = config.getString("progress_bar.color", "GREEN");
-		try {
-			Progress_color = BarColor.valueOf(color.toUpperCase());
-		} catch (IllegalArgumentException e) {
-			Progress_color = BarColor.GREEN;
-			getLogger().warning("Invalid progress bar color: " + color + ". Using default GREEN.");
-		}
-		
-		TextP = config.getString("progress_bar.text", "&aOneBlock Progress: &e%level% &7(&e%blocks%&7/&e%need%&7)");
-		if (PAPI) {
-			TextP = PlaceholderAPI.setPlaceholders(null, TextP);
-		}
-	}
-	
-	public void updateBossBar(Player player, int level, int blocks, int need) {
-		if (!Progress_bar) return;
-		PlayerInfo info = PlayerInfo.get(player.getUniqueId());
-		if (info == null || info.bar == null) return;
-		
-		String title = getBarTitle(player, level);
-		double progress = (double) blocks / need;
-		info.bar.setTitle(title);
-		info.bar.setProgress(Math.min(1.0, Math.max(0.0, progress)));
-		info.bar.setColor(Progress_color);
-	}
 	
     private void Messagefile() {
         File message = new File(getDataFolder(), "messages.yml");
@@ -1532,10 +1357,7 @@ public class Oneblock extends JavaPlugin {
     	return inf.getNeed() - inf.breaks;
     }
     public static int getlenght(UUID pl_uuid) {
-        PlayerInfo info = PlayerInfo.get(pl_uuid);
-        if (info == null) return 0;
-        Level level = Level.get(info.level);
-        return level != null ? level.need : 0;
+    	return PlayerInfo.get(pl_uuid).getNeed();
     }
     public static PlayerInfo gettop(int i) {
     	if (PlayerInfo.size() <= i) return new PlayerInfo(null);

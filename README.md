@@ -1,6 +1,6 @@
 <a href="https://www.spigotmc.org/resources/oneblock.83215/"><img src="https://i.ibb.co/xCRdNdM/ob.png" width="200" alt="spigot page" align="right"></a>
 <div align="center">
-  <h1>OneBlock</h1>
+  <h1>OneBlock / Remake by forword</h1>
   <h3>Support 1.8.X - 1.21.X and higher...</h3>
   <h3>Works on java 8 and bukkit/</h3>
 

@@ -15,12 +15,7 @@ yleave: 0.0
 zleave: 0.0
 yawleave: 0.0
 #Should we enable the Progress Bar?
-progress_bar:
-  enabled: true
-  color: GREEN
-  text: "&aOneBlock Progress: &e%level% &7(&e%blocks%&7/&e%need%&7)"
-  auto_hide: true
-  hide_delay: 5
+progress_bar: true
 #What shoud progress bar show?
 progress_bar_text: level
 #Shoud we enable chat alert for Levels
@@ -35,12 +30,7 @@ rebirth_on_the_island: true
 #Default value: 5
 level_multiplier: 5
 #Should we Prevent other players going from their island to others islands?
-protection:
-  enabled: true
-  prevent_explosions: true
-  prevent_pistons: true
-  prevent_liquids: true
-  prevent_creative: true
+protection: false
 #Create a WorldGuard region for each island? (only premium)
 worldGuard: true
 #This is the block-distance between one Island to other.
@@ -58,67 +48,86 @@ max_players_team: 0
 #Keep player inventory after id reset?
 saveplayerinventory: false
 
-# General Settings
+# OneBlock Configuration
+
+# Radius in blocks for bossbar activation
 radius: 10
+
+# Mode: 'scenario' for sequential blocks, 'random' for random blocks
 mode: scenario
 
-# Block Generation Settings
-generation:
-  scenario:
-    enabled: true
-    blocks_per_level: 100
-    levels:
-      1:
-        name: "Grass"
-        blocks:
-          - GRASS_BLOCK
-          - DIRT
-          - STONE
-      2:
-        name: "Wood"
-        blocks:
-          - OAK_LOG
-          - BIRCH_LOG
-          - SPRUCE_LOG
-      3:
-        name: "Ores"
-        blocks:
-          - COAL_ORE
-          - IRON_ORE
-          - GOLD_ORE
-  random:
-    enabled: false
+# Bossbar settings
+bossbar:
+  enabled: true
+  color: BLUE
+  style: SOLID
+
+# Stages configuration
+stages:
+  grass:
+    name: "Grass Stage"
+    blocks-required: 100
     blocks:
       - GRASS_BLOCK
       - DIRT
       - STONE
-      - OAK_LOG
-      - BIRCH_LOG
-      - SPRUCE_LOG
-      - COAL_ORE
-      - IRON_ORE
-      - GOLD_ORE
+    mobs:
+      - COW
+      - SHEEP
+      - CHICKEN
+    mob-spawn-chance: 0.1
+
+  stone:
+    name: "Stone Stage"
+    blocks-required: 150
+    blocks:
+      - STONE
+      - COBBLESTONE
+      - GRAVEL
     mobs:
       - ZOMBIE
       - SKELETON
       - SPIDER
-    flowers:
-      - DANDELION
-      - POPPY
-      - BLUE_ORCHID
+    mob-spawn-chance: 0.15
 
-# Messages
-messages:
-  level_up: "&aYou have reached level %level%!"
-  block_break: "&eYou broke a block! Progress: %blocks%/%need%"
-  no_permission: "&cYou don't have permission to do that!"
-  block_protected: "&cThis block is protected!"
-  invalid_location: "&cInvalid location for OneBlock!"
+  ore:
+    name: "Ore Stage"
+    blocks-required: 200
+    blocks:
+      - COAL_ORE
+      - IRON_ORE
+      - GOLD_ORE
+      - REDSTONE_ORE
+      - LAPIS_ORE
+      - DIAMOND_ORE
+    mobs:
+      - CREEPER
+      - ENDERMAN
+      - WITCH
+    mob-spawn-chance: 0.2
 
-# Integration Settings
-integrations:
-  placeholderapi: true
-  worldguard: true
-  coreprotect: true
-  itemsadder: true
-  oraxen: true
+  nether:
+    name: "Nether Stage"
+    blocks-required: 250
+    blocks:
+      - NETHERRACK
+      - SOUL_SAND
+      - GLOWSTONE
+      - NETHER_BRICKS
+    mobs:
+      - BLAZE
+      - MAGMA_CUBE
+      - GHAST
+    mob-spawn-chance: 0.25
+
+  end:
+    name: "End Stage"
+    blocks-required: 300
+    blocks:
+      - END_STONE
+      - PURPUR_BLOCK
+      - OBSIDIAN
+    mobs:
+      - ENDERMAN
+      - SHULKER
+    mob-spawn-chance: 0.3

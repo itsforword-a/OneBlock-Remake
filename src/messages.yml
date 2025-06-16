@@ -74,3 +74,28 @@ allowed_visit: |
 
 forbidden_visit: |
     &eYou have Forbidden other players from visiting your island!
+
+# OneBlock Messages
+
+# General messages
+player-only: "&cThis command can only be used by players!"
+no-permission: "&cYou don't have permission to use this command!"
+
+# OneBlock commands
+oneblock-set: "&aOneBlock has been set at your location!"
+oneblock-removed: "&aOneBlock has been removed from this location!"
+no-oneblock-here: "&cThere is no OneBlock at this location!"
+
+# Bossbar format
+# Available placeholders:
+# %stage% - Current stage name
+# %progress% - Progress percentage
+bossbar-format: "&bStage: %stage% &7(&e%progress%%&7)"
+
+# Stage names
+stages:
+  grass: "&aGrass Stage"
+  stone: "&7Stone Stage"
+  ore: "&6Ore Stage"
+  nether: "&cNether Stage"
+  end: "&5End Stage"
